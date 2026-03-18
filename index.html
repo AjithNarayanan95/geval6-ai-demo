@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>G6 AI Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --primary: #f25b22;
+      --dark-bg: #1a1a1a;
+      --dark-bg-alt: #202020;
+      --light-bg: #ffffff;
+      --text-main: #222222;
+      --text-muted: #666666;
+      --nav-height: 70px;
+      --max-width: 1200px;
+      --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.15);
+      --radius-card: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: var(--text-main); background: #fafafa; line-height: 1.5;
+    }
+
+    a { text-decoration: none; color: inherit; }
+
+    .top-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .top-nav-inner {
+      max-width: var(--max-width); margin: 0 auto; height: var(--nav-height);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+    }
+    .logo-area { display: flex; align-items: center; gap: 10px; }
+    .logo-mark {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #ffb68a, var(--primary));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-weight: 700; font-size: 18px;
+    }
+    .logo-text { display: flex; flex-direction: column; font-size: 13px; }
+    .logo-text span:first-child { font-weight: 700; letter-spacing: 0.03em; }
+    .logo-text span:last-child { color: var(--text-muted); font-size: 11px; }
+    .nav-links { display: flex; align-items: center; gap: 24px; font-size: 14px; }
+    .nav-links a { color: var(--text-muted); position: relative; padding-bottom: 4px; }
+    .nav-links a:hover::after {
+      content: ""; position: absolute; left: 0; bottom: 0;
+      height: 2px; width: 100%; background: var(--primary);
+    }
+    .btn-primary {
+      background: var(--primary); color: #fff; padding: 10px 18px;
+      border-radius: 4px; font-size: 13px; border: none; cursor: pointer;
+      box-shadow: var(--shadow-soft); transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+    }
+    .btn-primary:hover { background: #ff6a32; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,0,0,0.2); }
+
+    .hero {
+      background: radial-gradient(circle at 0% 0%, #283a5a, #050712);
+      color: #fff; padding: 80px 16px 90px; position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: ""; position: absolute; inset: 0;
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.08) 0, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.04) 0, transparent 55%);
+      pointer-events: none;
+    }
+    .hero-inner {
+      position: relative; max-width: var(--max-width); margin: 0 auto;
+      display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2fr);
+      gap: 40px; align-items: center;
+    }
+    .hero-eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 11px; color: #ffb68a; margin-bottom: 10px; }
+    .hero-title { font-size: 36px; line-height: 1.1; margin-bottom: 16px; }
+    .hero-title span { color: var(--primary); }
+    .hero-subtitle { font-size: 15px; max-width: 480px; color: #e0e0e0; margin-bottom: 22px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+    .btn-secondary {
+      background: transparent; color: #fff;
+      border: 1px solid rgba(255,255,255,0.35); padding: 9px 17px;
+      border-radius: 4px; font-size: 13px; cursor: pointer;
+    }
+    .hero-right {
+      justify-self: end; max-width: 380px; width: 100%;
+      background: rgba(8,8,25,0.85); border-radius: 10px; padding: 20px 18px;
+      border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 18px 45px rgba(0,0,0,0.55);
+    }
+    .hero-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .hero-card-header h3 { font-size: 15px; font-weight: 600; }
+    .status-pill {
+      font-size: 11px; padding: 3px 9px; border-radius: 999px;
+      background: rgba(0,200,118,0.12); color: #4ade80;
+      border: 1px solid rgba(74,222,128,0.35);
+    }
+    .hero-chat-preview {
+      background: #050712; border-radius: 8px; padding: 10px 12px;
+      margin-bottom: 12px; font-size: 12px; border: 1px solid rgba(255,255,255,0.06);
+    }
+    .chat-bubble { display: inline-block; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; }
+    .chat-bubble.user { background: rgba(255,255,255,0.04); }
+    .chat-bubble.bot { background: rgba(242,91,34,0.18); border: 1px solid rgba(242,91,34,0.6); }
+    .hero-footnote { font-size: 11px; color: #b3b3b3; }
+
+    .numbers { background: var(--dark-bg); color: #fff; padding: 60px 16px; }
+    .numbers-inner { max-width: var(--max-width); margin: 0 auto; text-align: center; }
+    .numbers-title { font-size: 26px; margin-bottom: 30px; }
+    .numbers-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 18px; margin-top: 25px; }
+    .number-card { background: var(--dark-bg-alt); padding: 20px 10px; border-radius: var(--radius-card); border: 1px solid rgba(255,255,255,0.04); }
+    .number-label { font-size: 13px; color: #bbb; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.12em; }
+    .number-main { font-size: 26px; color: var(--primary); margin-bottom: 6px; font-weight: 700; }
+    .number-sub { font-size: 12px; color: #ddd; }
+
+    .content-split { background: var(--light-bg); padding: 60px 16px 70px; }
+    .content-split-inner {
+      max-width: var(--max-width); margin: 0 auto;
+      display: grid; grid-template-columns: minmax(0,3fr) minmax(0,2.5fr);
+      gap: 40px; align-items: start;
+    }
+    .section-title { font-size: 28px; margin-bottom: 16px; }
+    .section-subtitle { font-size: 15px; color: var(--text-muted); margin-bottom: 18px; }
+    .pill-heading { display: inline-block; padding: 6px 12px; border-left: 3px solid var(--primary); background: #fff3ec; font-size: 13px; margin-bottom: 14px; }
+    .bullet-list { list-style: none; font-size: 14px; color: var(--text-muted); }
+    .bullet-list li { margin-bottom: 8px; }
+    .bullet-list li::before { content: "• "; color: var(--primary); }
+    .testimonial-card { background: #fff; border-radius: var(--radius-card); box-shadow: var(--shadow-soft); padding: 20px 18px; border-top: 3px solid var(--primary); }
+    .testimonial-title { font-size: 22px; margin-bottom: 12px; }
+    .testimonial-body { font-size: 14px; color: var(--text-muted); margin-bottom: 14px; }
+    .testimonial-name { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+    .testimonial-role { font-size: 12px; color: var(--text-muted); }
+
+    .footer { background: #101010; color: #aaa; padding: 28px 16px; font-size: 12px; }
+    .footer-inner { max-width: var(--max-width); margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .footer-links { display: flex; gap: 14px; flex-wrap: wrap; }
+    .footer a { color: #aaa; }
+
+    /* ══ CHAT LAUNCHER ══ */
+    .chat-launcher { position: fixed; right: 28px; bottom: 28px; z-index: 9999; }
+    .chat-launcher-btn {
+      width: 58px; height: 58px; border-radius: 50%;
+      background: var(--primary); color: #fff; border: none; cursor: pointer;
+      font-size: 26px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 8px 28px rgba(242,91,34,0.45); transition: transform 0.2s, box-shadow 0.2s;
+      animation: chatPulse 2.5s infinite;
+    }
+    .chat-launcher-btn:hover { transform: scale(1.08); box-shadow: 0 12px 35px rgba(242,91,34,0.55); }
+    @keyframes chatPulse {
+      0%,100% { box-shadow: 0 8px 28px rgba(242,91,34,0.45); }
+      50%      { box-shadow: 0 8px 38px rgba(242,91,34,0.65); }
+    }
+
+    /* ══ CHAT WINDOW ══ */
+    .chat-window {
+      position: fixed; right: 28px; bottom: 100px; z-index: 9998;
+      width: 375px; height: 590px; background: #fff; border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+      display: none; flex-direction: column; overflow: hidden; font-size: 14px;
+    }
+    .chat-window.open { display: flex; }
+
+    /* ══ AI HEADER ══ */
+    .cw-header {
+      background: linear-gradient(135deg, #1a0a00 0%, #2d1200 45%, #c94a18 100%);
+      color: #fff; padding: 0; flex-shrink: 0;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid rgba(242,91,34,0.25);
+    }
+    .cw-header::before {
+      content: ""; position: absolute; inset: 0;
+      background:
+        radial-gradient(circle at 15% 60%, rgba(242,91,34,0.4) 0%, transparent 55%),
+        radial-gradient(circle at 85% 20%, rgba(255,150,80,0.2) 0%, transparent 45%);
+      animation: headerGlow 4s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes headerGlow {
+      0%   { opacity: 0.6; transform: scale(1); }
+      100% { opacity: 1;   transform: scale(1.06); }
+    }
+    .cw-header::after {
+      content: ""; position: absolute;
+      top: 0; left: -100%; width: 55%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+      animation: scanLine 4s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes scanLine {
+      0%   { left: -55%; }
+      100% { left: 110%; }
+    }
+
+    .cw-header-inner {
+      position: relative; z-index: 1;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .cw-avatar {
+      width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
+      background: linear-gradient(135deg, #f25b22, #ff9a5c);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; letter-spacing: 0.03em;
+      box-shadow: 0 0 0 2px rgba(242,91,34,0.5), 0 0 20px rgba(242,91,34,0.45);
+      animation: avatarPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes avatarPulse {
+      0%,100% { box-shadow: 0 0 0 2px rgba(242,91,34,0.5), 0 0 20px rgba(242,91,34,0.4); }
+      50%      { box-shadow: 0 0 0 4px rgba(242,91,34,0.2), 0 0 30px rgba(242,91,34,0.65); }
+    }
+    .cw-info { flex: 1; }
+    .cw-title {
+      font-size: 15px; font-weight: 700; letter-spacing: 0.01em;
+      display: flex; align-items: center; gap: 7px;
+    }
+    .cw-ai-badge {
+      font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+      background: linear-gradient(90deg, #f25b22, #ff9a5c);
+      color: #fff; padding: 2px 6px; border-radius: 4px;
+      text-transform: uppercase; border: 1px solid rgba(255,255,255,0.2);
+    }
+    .cw-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; opacity: 0.8; margin-top: 3px;
+    }
+    .cw-dot {
+      width: 7px; height: 7px; border-radius: 50%; background: #4ade80;
+      box-shadow: 0 0 6px #4ade80;
+      animation: dotBlink 2s ease-in-out infinite;
+    }
+    @keyframes dotBlink {
+      0%,100% { opacity: 1; } 50% { opacity: 0.35; }
+    }
+    .cw-header-actions { display: flex; gap: 6px; align-self: flex-start; margin-top: 2px; }
+    .cw-hbtn {
+      width: 28px; height: 28px; border-radius: 8px; border: none;
+      background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; transition: background 0.15s;
+    }
+    .cw-hbtn:hover { background: rgba(255,255,255,0.28); }
+
+    /* Header Stats Bar */
+    .cw-header-meta {
+      position: relative; z-index: 1;
+      display: flex; border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .cw-meta-item {
+      flex: 1; padding: 7px 8px; text-align: center;
+      border-right: 1px solid rgba(255,255,255,0.07);
+      font-size: 10px; color: rgba(255,255,255,0.55);
+      line-height: 1.3;
+    }
+    .cw-meta-item:last-child { border-right: none; }
+    .cw-meta-val {
+      display: block; font-size: 12px; font-weight: 700;
+      color: #ff9a5c; margin-bottom: 1px;
+    }
+
+    /* ══ MESSAGES ══ */
+    .cw-messages {
+      flex: 1; overflow-y: auto; padding: 18px 16px;
+      background: #f8fafc; display: flex; flex-direction: column; gap: 14px;
+    }
+    .cw-messages::-webkit-scrollbar { width: 4px; }
+    .cw-messages::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+    .cw-msg { display: flex; gap: 9px; align-items: flex-end; }
+    .cw-msg.user { flex-direction: row-reverse; }
+    .cw-msg-avatar {
+      width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+    }
+    .cw-msg.bot  .cw-msg-avatar { background: var(--primary); color: #fff; }
+    .cw-msg.user .cw-msg-avatar { background: #e2e8f0; color: #444; }
+    .cw-msg-bubble {
+      max-width: 78%; padding: 11px 14px; border-radius: 18px;
+      line-height: 1.55; font-size: 13.5px;
+    }
+    .cw-msg.bot  .cw-msg-bubble {
+      background: #fff; color: #1e293b;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+      border-radius: 4px 18px 18px 18px;
+    }
+    .cw-msg.user .cw-msg-bubble {
+      background: var(--primary); color: #fff;
+      border-radius: 18px 18px 4px 18px;
+    }
+
+    /* ══ QUICK BAR ══ */
+    .cw-quick-bar {
+      padding: 9px 14px 8px; background: #f8fafc;
+      border-top: 1px solid #e8eef4;
+      display: flex; flex-wrap: wrap; gap: 7px; flex-shrink: 0;
+      min-height: 44px; align-items: center;
+    }
+    .cw-quick-bar-label {
+      width: 100%; font-size: 10px; color: #94a3b8;
+      margin-bottom: 3px; letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .cw-quick-btn {
+      padding: 6px 13px; border-radius: 20px;
+      border: 1.5px solid #f25b22; color: #f25b22;
+      background: #fff; font-size: 12px; cursor: pointer;
+      transition: all 0.15s; white-space: nowrap;
+      animation: fadeInBtn 0.25s ease;
+    }
+    @keyframes fadeInBtn {
+      from { opacity: 0; transform: translateY(5px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .cw-quick-btn:hover { background: #f25b22; color: #fff; }
+    .cw-quick-btn-cta {
+      border-color: #1e293b; color: #1e293b; font-weight: 600;
+    }
+    .cw-quick-btn-cta:hover { background: #1e293b; color: #fff; border-color: #1e293b; }
+
+    /* ══ TYPING ══ */
+    .cw-typing-row { display: flex; gap: 9px; align-items: flex-end; }
+    .cw-typing-bubble {
+      background: #fff; padding: 14px 16px; border-radius: 4px 18px 18px 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07); display: flex; gap: 5px; align-items: center;
+    }
+    .cw-typing-bubble span {
+      width: 8px; height: 8px; border-radius: 50%; background: #cbd5e1;
+      animation: typingBounce 1.2s infinite;
+    }
+    .cw-typing-bubble span:nth-child(2) { animation-delay: 0.2s; }
+    .cw-typing-bubble span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%,60%,100% { transform: translateY(0); }
+      30%          { transform: translateY(-6px); }
+    }
+
+    /* ══ INPUT ══ */
+    .cw-input-area {
+      padding: 10px 14px 12px; background: #fff;
+      border-top: 1px solid #e2e8f0;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .cw-input-wrap {
+      flex: 1; display: flex; align-items: center; gap: 8px;
+      background: #f1f5f9; border-radius: 24px; padding: 10px 14px;
+      border: 1.5px solid transparent; transition: border-color 0.15s;
+    }
+    .cw-input-wrap:focus-within { border-color: var(--primary); }
+    .cw-icon-btn { background: none; border: none; cursor: pointer; font-size: 17px; color: #94a3b8; padding: 0; }
+    .cw-icon-btn:hover { color: var(--primary); }
+    .cw-input { flex: 1; border: none; background: none; outline: none; font-size: 13.5px; color: #1e293b; }
+    .cw-send {
+      width: 40px; height: 40px; border-radius: 50%; border: none;
+      background: var(--primary); color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(242,91,34,0.35);
+      transition: background 0.15s, transform 0.1s;
+    }
+    .cw-send:hover { background: #ff6a32; transform: scale(1.05); }
+    .cw-send:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .cw-footer {
+      text-align: center; font-size: 11px; color: #aaa;
+      padding: 5px 0 8px; background: #fff; flex-shrink: 0;
+    }
+
+    @media (max-width: 960px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .hero-right { justify-self: stretch; }
+      .numbers-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .content-split-inner { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .top-nav-inner { flex-wrap: wrap; gap: 10px; height: auto; padding: 10px 16px; }
+      .nav-links { flex-wrap: wrap; justify-content: center; }
+      .numbers-grid { grid-template-columns: 1fr; }
+      .chat-window { width: calc(100vw - 32px); right: 16px; bottom: 90px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="top-nav">
+    <div class="top-nav-inner">
+      <div class="logo-area">
+        <div class="logo-mark">G</div>
+        <div class="logo-text">
+          <span>G6 AI Demo</span>
+          <span>Internal preview only</span>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="#infra">Infrastructure Services</a>
+        <a href="#staffing">Staffing Services</a>
+        <a href="#digital">Digital Services</a>
+        <a href="#enterprise">Enterprise Services</a>
+        <a href="#workforce">Workforce Solutions</a>
+        <a href="#education">Education</a>
+        <button class="btn-primary">Get in Touch</button>
+      </nav>
+    </div>
+  </header>
+
+  <section class="hero" id="digital">
+    <div class="hero-inner">
+      <div class="hero-left">
+        <div class="hero-eyebrow">G6 look &amp; feel demo</div>
+        <h1 class="hero-title">Digital <span>Assistant</span> for the G6 website</h1>
+        <p class="hero-subtitle">
+          This page mimics the layout of our production site while hosting an experimental AI chatbot.
+          It is purely for internal review and does not use real customer data.
+        </p>
+        <div class="hero-actions">
+          <button class="btn-primary" onclick="openChat()">Try the AI Chatbot</button>
+          <button class="btn-secondary">View conversation examples</button>
+        </div>
+      </div>
+      <aside class="hero-right">
+        <div class="hero-card-header">
+          <h3>Chatbot preview</h3>
+          <span class="status-pill">Online · demo</span>
+        </div>
+        <div class="hero-chat-preview">
+          <div class="chat-bubble user">"Help me understand our digital services portfolio."</div>
+          <div class="chat-bubble bot">"Sure. I can walk you through key service lines and show relevant case studies."</div>
+        </div>
+        <p class="hero-footnote">The real chatbot widget floats at the bottom-right. Click the orange bubble to start.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="numbers">
+    <div class="numbers-inner">
+      <h2 class="numbers-title">We will also let our AI numbers speak</h2>
+      <div class="numbers-grid">
+        <div class="number-card"><div class="number-label">Conversations</div><div class="number-main">1,000+</div><div class="number-sub">Simulated chat sessions in this demo</div></div>
+        <div class="number-card"><div class="number-label">Knowledge</div><div class="number-main">50+</div><div class="number-sub">Internal documents connected</div></div>
+        <div class="number-card"><div class="number-label">Responses</div><div class="number-main">10,000+</div><div class="number-sub">Potential answers generated</div></div>
+        <div class="number-card"><div class="number-label">Domains</div><div class="number-main">10+</div><div class="number-sub">Service areas the bot understands</div></div>
+        <div class="number-card"><div class="number-label">Teams</div><div class="number-main">5+</div><div class="number-sub">Internal groups using this assistant</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="content-split">
+    <div class="content-split-inner">
+      <div>
+        <h2 class="section-title">Our answers to your internal questions</h2>
+        <p class="section-subtitle">Before we go live on the real site, this sandbox shows how an AI assistant can respond to typical G6 scenarios while keeping the visual style familiar.</p>
+        <div class="pill-heading">You want to explore the chatbot?</div>
+        <ul class="bullet-list">
+          <li>Ask about any G6 service line and get a structured, concise answer.</li>
+          <li>Test how the bot routes requests such as "contact sales" or "book a demo".</li>
+          <li>Review how the tone and content can be tuned for our brand voice.</li>
+          <li>Validate handoff flows to human teams before production rollout.</li>
+        </ul>
+      </div>
+      <aside>
+        <div class="testimonial-card">
+          <h3 class="testimonial-title">What this demo proves</h3>
+          <p class="testimonial-body">"This internal page lets us see the chatbot in a layout almost identical to our website, without touching production."</p>
+          <div class="testimonial-name">G6 Stakeholder (Internal)</div>
+          <div class="testimonial-role">Previewing the AI Chatbot Integration</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div>© 2026 G6 AI Demo – For internal evaluation only.</div>
+      <div class="footer-links">
+        <a href="#">Demo Privacy</a>
+        <a href="#">Demo Terms</a>
+        <a href="#">Contact Owner</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ══ CHAT LAUNCHER ══ -->
+  <div class="chat-launcher">
+    <button class="chat-launcher-btn" onclick="toggleChat()" title="Chat with Geval6 AI">💬</button>
+  </div>
+
+  <!-- ══ CHAT WINDOW ══ -->
+  <div class="chat-window" id="chatWindow">
+
+    <!-- AI HEADER -->
+    <div class="cw-header">
+      <div class="cw-header-inner">
+        <div class="cw-avatar">G6</div>
+        <div class="cw-info">
+          <div class="cw-title">
+            Geval6 AI Assistant
+            <span class="cw-ai-badge">AI</span>
+          </div>
+          <div class="cw-status">
+            <div class="cw-dot"></div>
+            <span>We're online</span>
+          </div>
+        </div>
+        <div class="cw-header-actions">
+          <button class="cw-hbtn" onclick="minimizeChat()" title="Minimize">—</button>
+          <button class="cw-hbtn" onclick="toggleChat()" title="Close">✕</button>
+        </div>
+      </div>
+      <div class="cw-header-meta">
+        <div class="cw-meta-item"><span class="cw-meta-val">24/7</span>Available</div>
+        <div class="cw-meta-item"><span class="cw-meta-val">~2s</span>Response</div>
+        <div class="cw-meta-item"><span class="cw-meta-val">100+</span>Topics</div>
+        <!-- <div class="cw-meta-item"><span class="cw-meta-val">🔒</span>Secure</div> -->
+      </div>
+    </div>
+
+    <!-- MESSAGES -->
+    <div class="cw-messages" id="cwMessages">
+      <div class="cw-msg bot">
+        <div class="cw-msg-avatar">G</div>
+        <div class="cw-msg-bubble">Hello! 👋 Welcome to Geval6. I'm your AI assistant — here to help you 24/7. What would you like to know today?</div>
+      </div>
+    </div>
+
+    <!-- DYNAMIC QUICK BAR -->
+    <div class="cw-quick-bar" id="cwQuickBar">
+      <div class="cw-quick-bar-label">Quick questions</div>
+      <button class="cw-quick-btn" onclick="sendQuick('What services does Geval6 offer?')">Our Services</button>
+      <button class="cw-quick-btn" onclick="sendQuick('Tell me about Digital Commerce')">Digital Commerce</button>
+      <button class="cw-quick-btn" onclick="sendQuick('Tell me about Staffing Services')">Staffing</button>
+      <button class="cw-quick-btn cw-quick-btn-cta" onclick="sendQuick('Book a demo with Geval6')">📅 Book a Demo</button>
+    </div>
+
+    <!-- INPUT -->
+    <div class="cw-input-area">
+      <div class="cw-input-wrap">
+        <!-- <button class="cw-icon-btn" title="Emoji">😊</button>
+        <button class="cw-icon-btn" title="Attach">📎</button> -->
+        <input class="cw-input" id="cwInput" type="text" placeholder="Type your message..." onkeydown="handleKey(event)" />
+      </div>
+      <button class="cw-send" id="cwSend" onclick="sendMessage()" title="Send">➤</button>
+    </div>
+
+    <div class="cw-footer">Powered by <strong>Geval6 AI</strong></div>
+  </div>
+
+  <script>
+    const WEBHOOK    = 'http://localhost:5678/webhook/e88bd9c4-f2cf-4daf-83e1-d2eca70eb1a4/chat';
+    const SESSION_ID = 'session-' + Math.random().toString(36).substring(2, 11);
+    let isOpen = false;
+
+    const DEFAULT_BUTTONS = [
+      { label: 'Our Services',     msg: 'What services does Geval6 offer?' },
+      { label: 'Digital Commerce', msg: 'Tell me about Digital Commerce' },
+      { label: 'Staffing',         msg: 'Tell me about Staffing Services' },
+    ];
+
+    function toggleChat() {
+      isOpen = !isOpen;
+      document.getElementById('chatWindow').classList.toggle('open', isOpen);
+      if (isOpen) document.getElementById('cwInput').focus();
+    }
+    function openChat() {
+      isOpen = true;
+      document.getElementById('chatWindow').classList.add('open');
+      document.getElementById('cwInput').focus();
+    }
+    function minimizeChat() {
+      isOpen = false;
+      document.getElementById('chatWindow').classList.remove('open');
+    }
+    function handleKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    }
+    function sendQuick(text) {
+      document.getElementById('cwInput').value = text;
+      sendMessage();
+    }
+
+    function addMessage(role, text) {
+      const container = document.getElementById('cwMessages');
+      const div = document.createElement('div');
+      div.className = `cw-msg ${role}`;
+      div.innerHTML = `
+        <div class="cw-msg-avatar">${role === 'bot' ? 'G' : 'U'}</div>
+        <div class="cw-msg-bubble">${text}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    let typingEl = null;
+    function setTyping(show) {
+      const container = document.getElementById('cwMessages');
+      if (show && !typingEl) {
+        typingEl = document.createElement('div');
+        typingEl.className = 'cw-typing-row';
+        typingEl.innerHTML = `
+          <div class="cw-msg-avatar" style="width:30px;height:30px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;">G</div>
+          <div class="cw-typing-bubble"><span></span><span></span><span></span></div>`;
+        container.appendChild(typingEl);
+        container.scrollTop = container.scrollHeight;
+      } else if (!show && typingEl) {
+        typingEl.remove();
+        typingEl = null;
+      }
+    }
+
+    function normalizeText(text) {
+      return text.replace(/\\n/g, '\n').replace(/\\t/g, ' ').trim();
+    }
+
+    function updateQuickBar(rawReply) {
+      const bar  = document.getElementById('cwQuickBar');
+      const text = normalizeText(rawReply);
+
+      const sectionMatch = text.match(
+        /what would you like to do next\??[^*\n]*\*{0,2}[\s\S]*?\n([\s\S]+)/i
+      );
+
+      let buttons = [];
+      if (sectionMatch) {
+        const lines = sectionMatch[1].split('\n');
+        for (const line of lines) {
+          const cleaned = line
+            .replace(/^[-*]\s*/, '')
+            .replace(/\*\*/g, '')
+            .replace(/^\[|\]$/g, '')
+            .trim();
+          if (cleaned.length > 2 && cleaned.length < 80) buttons.push(cleaned);
+        }
+      }
+
+      bar.innerHTML = '';
+
+      if (buttons.length > 0) {
+        const lbl = document.createElement('div');
+        lbl.className = 'cw-quick-bar-label';
+        lbl.textContent = 'What would you like to do next?';
+        bar.appendChild(lbl);
+        buttons.slice(0, 3).forEach(txt => {
+          if (/book a demo|book a meeting/i.test(txt)) return;
+          const btn = document.createElement('button');
+          btn.className = 'cw-quick-btn';
+          btn.textContent = txt;
+          btn.onclick = () => sendQuick(txt);
+          bar.appendChild(btn);
+        });
+      } else {
+        const lbl = document.createElement('div');
+        lbl.className = 'cw-quick-bar-label';
+        lbl.textContent = 'Quick questions';
+        bar.appendChild(lbl);
+        DEFAULT_BUTTONS.forEach(({ label, msg }) => {
+          const btn = document.createElement('button');
+          btn.className = 'cw-quick-btn';
+          btn.textContent = label;
+          btn.onclick = () => sendQuick(msg);
+          bar.appendChild(btn);
+        });
+      }
+
+      // Always persistent CTA
+      const demo = document.createElement('button');
+      demo.className = 'cw-quick-btn cw-quick-btn-cta';
+      demo.textContent = '📅 Book a Demo';
+      demo.onclick = () => sendQuick('I want to book a demo with Geval6');
+      bar.appendChild(demo);
+    }
+
+    // function stripMarkdown(text) {
+    //   return text
+    //     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    //     .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    //     .replace(/^#{1,6}\s+/gm, '')
+    //     .replace(/\n- /g, '\n• ')
+    //     .replace(/\n/g, '<br>');
+    // }
+
+    function stripMarkdown(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/\n- /g, '\n• ')
+    // ✅ Markdown links [Click here](https://...)
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#f25b22;text-decoration:underline;font-weight:600;">$1 ↗</a>')
+    // ✅ Plain URLs https://... not already inside href
+    .replace(/(?<!=["'])(https?:\/\/[^\s<>"']+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" style="color:#f25b22;text-decoration:underline;font-weight:600;">$1 ↗</a>')
+    .replace(/\n/g, '<br>');
+}
+
+
+    async function sendMessage() {
+      const input   = document.getElementById('cwInput');
+      const sendBtn = document.getElementById('cwSend');
+      const text    = input.value.trim();
+      if (!text) return;
+
+      addMessage('user', text);
+      input.value = '';
+      sendBtn.disabled = true;
+      setTyping(true);
+
+      try {
+        const res = await fetch(WEBHOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chatInput: text, sessionId: SESSION_ID, action: 'sendMessage' })
+        });
+
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+        const data = await res.json();
+        const rawReply = data.output
+          ?? data.text
+          ?? data.response
+          ?? data.message
+          ?? (Array.isArray(data) ? (data[0]?.output ?? data[0]?.text ?? null) : null)
+          ?? 'I received your message!';
+
+        setTyping(false);
+        addMessage('bot', stripMarkdown(rawReply));
+        updateQuickBar(rawReply);
+
+      } catch (err) {
+        setTyping(false);
+        addMessage('bot', '⚠️ Sorry, I ran into an issue. Please try again shortly.');
+        console.error('Chat error:', err);
+      } finally {
+        sendBtn.disabled = false;
+        input.focus();
+      }
+    }
+  </script>
+</body>
+</html>
