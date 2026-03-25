@@ -364,6 +364,26 @@
       text-align: center; font-size: 11px; color: #aaa;
       padding: 5px 0 8px; background: #fff; flex-shrink: 0;
     }
+    .cw-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 5px;
+  transition: transform 0.2s ease;
+}
+.cw-icon-btn:hover {
+  transform: scale(1.2);
+}
+.recording {
+  color: #f25b22; /* Changes color to Geval6 orange when recording */
+  animation: pulse 1.5s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
 
     @media (max-width: 960px) {
       .hero-inner { grid-template-columns: 1fr; }
@@ -532,11 +552,11 @@
 
     <!-- INPUT -->
     <div class="cw-input-area">
-      <div class="cw-input-wrap">
-        <!-- <button class="cw-icon-btn" title="Emoji">😊</button>
-        <button class="cw-icon-btn" title="Attach">📎</button> -->
-        <input class="cw-input" id="cwInput" type="text" placeholder="Type your message..." onkeydown="handleKey(event)" />
-      </div>
+    <div class="cw-input-wrap">
+    <input class="cw-input" id="cwInput" type="text" placeholder="Type or speak your message..." onkeydown="handleKey(event)" />
+    <!-- New Mic Button -->
+    <button class="cw-icon-btn" id="micBtn" title="Speak" onclick="startVoiceRecognition()">🎤</button>
+</div>
       <button class="cw-send" id="cwSend" onclick="sendMessage()" title="Send">➤</button>
     </div>
 
@@ -732,6 +752,45 @@
         input.focus();
       }
     }
+    function startVoiceRecognition() {
+    const micBtn = document.getElementById('micBtn');
+    const inputField = document.getElementById('cwInput');
+
+    // Check if browser supports speech recognition
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        alert("Your browser does not support voice recognition. Please try Chrome or Edge.");
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN'; // Set language to India English
+    recognition.interimResults = false;
+
+    // Visual feedback
+    micBtn.classList.add('recording');
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        inputField.value = transcript;
+        micBtn.classList.remove('recording');
+        
+        // Automatically send the message
+        sendMessage(); 
+    };
+
+    recognition.onerror = (event) => {
+        console.error("Speech error: ", event.error);
+        micBtn.classList.remove('recording');
+    };
+
+    recognition.onend = () => {
+        micBtn.classList.remove('recording');
+    };
+
+    recognition.start();
+}
   </script>
 </body>
 </html>
