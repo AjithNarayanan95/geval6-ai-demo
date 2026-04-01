@@ -51,6 +51,44 @@
       content: ""; position: absolute; left: 0; bottom: 0;
       height: 2px; width: 100%; background: var(--primary);
     }
+    .voice-trigger-btn {
+    position: relative;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.voice-trigger-btn.recording .mic-icon {
+    color: #f25b22;
+    transform: scale(1.2);
+}
+
+.pulse-ring {
+    display: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 2px solid #f25b22;
+    border-radius: 50%;
+    animation: mic-pulse 1.5s infinite;
+}
+
+.voice-trigger-btn.recording .pulse-ring {
+    display: block;
+}
+
+@keyframes mic-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.8); opacity: 0; }
+}
     .btn-primary {
       background: var(--primary); color: #fff; padding: 10px 18px;
       border-radius: 4px; font-size: 13px; border: none; cursor: pointer;
@@ -553,6 +591,16 @@
     <!-- INPUT -->
     <div class="cw-input-area">
     <div class="cw-input-wrap">
+        <input class="cw-input" id="cwInput" type="text" placeholder="Type a message..." onkeydown="handleKey(event)" />
+        <!-- Improved Voice Button -->
+        <button class="voice-trigger-btn" id="voiceBtn" title="Hold to Speak">
+            <span class="mic-icon">🎤</span>
+            <div class="pulse-ring"></div>
+        </button>
+    </div>
+    <button class="cw-send" id="cwSend" onclick="sendMessage()" title="Send">➤</button>
+</div>
+    <div class="cw-input-wrap">
     <input class="cw-input" id="cwInput" type="text" placeholder="Type or speak your message..." onkeydown="handleKey(event)" />
     <!-- New Mic Button -->
     <button class="cw-icon-btn" id="micBtn" title="Speak" onclick="startVoiceRecognition()">🎤</button>
@@ -752,44 +800,68 @@
         input.focus();
       }
     }
-    function startVoiceRecognition() {
-    const micBtn = document.getElementById('micBtn');
-    const inputField = document.getElementById('cwInput');
+    function startVoiceRecognition() {let mediaRecorder;
+let audioChunks = [];
 
-    // Check if browser supports speech recognition
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const voiceBtn = document.getElementById('voiceBtn');
+
+// This handles the "Hold to Talk" logic
+voiceBtn.addEventListener('mousedown', startRecording);
+voiceBtn.addEventListener('mouseup', stopRecording);
+voiceBtn.addEventListener('touchstart', startRecording);
+voiceBtn.addEventListener('touchend', stopRecording);
+
+async function startRecording() {
+    audioChunks = [];
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
     
-    if (!SpeechRecognition) {
-        alert("Your browser does not support voice recognition. Please try Chrome or Edge.");
-        return;
+    mediaRecorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        // Send this audio to n8n!
+        sendAudioToAI(audioBlob);
+    };
+
+    mediaRecorder.start();
+    voiceBtn.classList.add('recording');
+}
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+        mediaRecorder.stop();
+        voiceBtn.classList.remove('recording');
     }
+}
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-IN'; // Set language to India English
-    recognition.interimResults = false;
+async function sendAudioToAI(blob) {
+    setTyping(true);
+    
+    const formData = new FormData();
+    formData.append('audio', blob, 'user_voice.webm');
+    formData.append('sessionId', SESSION_ID);
 
-    // Visual feedback
-    micBtn.classList.add('recording');
-
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        inputField.value = transcript;
-        micBtn.classList.remove('recording');
+    try {
+        // We call the same webhook, but with the audio file
+        const response = await fetch(WEBHOOK, {
+            method: 'POST',
+            body: formData // n8n Webhook will receive this as a binary file
+        });
         
-        // Automatically send the message
-        sendMessage(); 
-    };
-
-    recognition.onerror = (event) => {
-        console.error("Speech error: ", event.error);
-        micBtn.classList.remove('recording');
-    };
-
-    recognition.onend = () => {
-        micBtn.classList.remove('recording');
-    };
-
-    recognition.start();
+        const data = await response.json();
+        const reply = data.output || "I've processed your voice message.";
+        
+        setTyping(false);
+        addMessage('bot', stripMarkdown(reply));
+        updateQuickBar(reply);
+    } catch (err) {
+        console.error("Audio upload failed", err);
+        setTyping(false);
+    }
+}
 }
   </script>
 </body>
