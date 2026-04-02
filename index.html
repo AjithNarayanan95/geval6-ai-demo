@@ -375,9 +375,23 @@
 .cw-icon-btn:hover {
   transform: scale(1.2);
 }
+/* Pulsing effect for the Mic Icon */
 .recording {
-  color: #f25b22; /* Changes color to Geval6 orange when recording */
-  animation: pulse 1.5s infinite;
+  color: #f25b22 !important;
+  animation: micPulse 1.5s infinite;
+  opacity: 1 !important;
+}
+
+@keyframes micPulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Turns the input background soft orange when listening */
+.input-listening {
+  background-color: #fff3ec !important;
+  border-color: #f25b22 !important;
 }
 @keyframes pulse {
   0% { opacity: 1; }
@@ -555,7 +569,7 @@
     <div class="cw-input-wrap">
     <input class="cw-input" id="cwInput" type="text" placeholder="Type or speak your message..." onkeydown="handleKey(event)" />
     <!-- New Mic Button -->
-    <button class="cw-icon-btn" id="micBtn" title="Speak" onclick="startVoiceRecognition()">🎤</button>
+    <button class="cw-icon-btn" id="micBtn" title="Speak" onclick="startVoiceRecognition()" style="font-size: 20px;">🎙️</button>
 </div>
       <button class="cw-send" id="cwSend" onclick="sendMessage()" title="Send">➤</button>
     </div>
@@ -755,39 +769,46 @@
     function startVoiceRecognition() {
     const micBtn = document.getElementById('micBtn');
     const inputField = document.getElementById('cwInput');
+    const inputWrap = inputField.parentElement; // The div around the input
 
-    // Check if browser supports speech recognition
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
-        alert("Your browser does not support voice recognition. Please try Chrome or Edge.");
+        alert("Voice recognition not supported in this browser. Please use Chrome.");
         return;
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'en-IN'; // Set language to India English
+    recognition.lang = 'en-IN'; // Optimized for Indian English
     recognition.interimResults = false;
 
-    // Visual feedback
-    micBtn.classList.add('recording');
+    // --- VISUAL START ---
+    recognition.onstart = () => {
+        micBtn.classList.add('recording');
+        inputWrap.classList.add('input-listening');
+        inputField.placeholder = "Listening... Speak now";
+        inputField.value = ""; // Clear box so user sees it's fresh
+    };
 
     recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         inputField.value = transcript;
-        micBtn.classList.remove('recording');
         
-        // Automatically send the message
+        // Stop visuals immediately upon hearing result
+        stopVisuals();
+        // Automatically trigger your existing sendMessage function
         sendMessage(); 
     };
 
-    recognition.onerror = (event) => {
-        console.error("Speech error: ", event.error);
-        micBtn.classList.remove('recording');
-    };
+    // --- CLEANUP ON END/ERROR ---
+    recognition.onerror = () => stopVisuals();
+    recognition.onend = () => stopVisuals();
 
-    recognition.onend = () => {
+    function stopVisuals() {
         micBtn.classList.remove('recording');
-    };
+        inputWrap.classList.remove('input-listening');
+        inputField.placeholder = "Type or speak your message...";
+    }
 
     recognition.start();
 }
